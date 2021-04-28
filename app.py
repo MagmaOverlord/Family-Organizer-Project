@@ -24,27 +24,33 @@ db.commit()
 @app.route('/')
 def index():
     if "username" in session:
-        return render_template("welcome.html", username = session["username"], list="")
+        sql = "SELECT host, description, day, time, status FROM events"
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        if len(results) == 0:
+            return render_template("/home.html", user = session["username"])
+        else:
+            return render_template("/home.html", user = session["username"], list=results)
     else:
         return render_template("index.html")
+
+#
+# ACCOUNT METHODS/ROUTES
+#
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        sql = "SELECT username FROM users"
-        cursor.execute(sql)
-        usernames = cursor.fetchall()
-        sql = "SELECT password FROM users"
-        cursor.execute(sql)
-        passwords = cursor.fetchall()
-        i = 0
-        for user in usernames:
-            if username == user and password == password[i]:
-                    session["username"] = username
-                    return redirect("/home")
-            i+=1
+        sql = "SELECT username FROM users WHERE username = %s AND password = %s"
+        values = (username, password)
+        cursor.execute(sql, values)
+        result = cursor.fetchall()
+        if len(result) == 1:
+            session["username"] = username
+            return render_template("home.html", user = session["username"])
+        else:
             return render_template("index.html", message = "Wrong username or password.")
     else:
         return render_template("index.html")
@@ -55,10 +61,19 @@ def signup():
         username = request.form.get("username")
         password = request.form.get("password")
         confirmPassword = request.form.get("confirm-password")
-        if password == confirmPassword:
-            sql = f'INSERT INTO users ("{username}", "{password}")'
-            cursor.execute(sql)
+        sql = "SELECT username FROM users WHERE username = %s"
+        value = (username,)
+        cursor.execute(sql, value)
+        result = cursor.fetchall()
+        if len(result) > 0:
+            return render_template("signup.html", message = "Username is already in use")
+        elif password == confirmPassword:
+            sql = "INSERT INTO users(username, password) VALUES(%s, %s)"
+            values = (username, password)
+            cursor.execute(sql, values)
             db.commit()
+            session["username"] = username
+            return redirect("/")
     else:
         return render_template("signup.html")
 
@@ -66,6 +81,50 @@ def signup():
 def logout():
     session.clear()
     return redirect("/")
+
+
+#
+# CALENDAR METHODS/ROUTES
+#
+
+@app.route("/add", methods=["GET", "POST"])
+def add():
+    if request.method == "POST":
+        description = request.form.get("description")
+        day = request.form.get("day")
+        time = request.form.get("time")
+        sql = "INSERT INTO events(host, description, day, time, status) VALUES(%s, %s, %s, %s, 'Scheduled')"
+        values = (session["username"], description, day, time)
+        cursor.execute(sql, values)
+        db.commit()
+        return redirect("/myevents")
+
+    else:
+        return render_template("add.html", user = session["username"])
+
+@app.route("/myevents")
+def myEvents():
+    sql = "SELECT host, description, day, time, status FROM events WHERE host = %s"
+    values = (session["username"],)
+    cursor.execute(sql, values)
+    result = cursor.fetchall()
+    if len(result) == 0:
+        return render_template("myevents.html", user = session["username"])
+    else:
+        return render_template("myevents.html", list = result, user = session["username"])
+
+@app.route("/cancel/<int: id>")
+def editEvent(id):
+    sql = "UPDATE events SET status = 'Cancelled' WHERE id = %s"
+    values = (id,)
+    cursor.execute(sql, values)
+
+@app.route("/update/<int:id>")
+def updateEvent(methods = ["GET", "POST"]):
+    if request.method == "POST":
+        pass
+    else:
+        pass
 
 if __name__ == '__main__':
     import os
