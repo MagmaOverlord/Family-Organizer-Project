@@ -106,7 +106,7 @@ def add():
 
 @app.route("/myevents")
 def myEvents():
-    sql = "SELECT host, description, day, time, status FROM events WHERE host = %s"
+    sql = "SELECT id, host, description, day, time, status FROM events WHERE host = %s"
     values = (session["username"],)
     cursor.execute(sql, values)
     result = cursor.fetchall()
@@ -115,18 +115,30 @@ def myEvents():
     else:
         return render_template("myevents.html", list = result, user = session["username"])
 
-@app.route("/cancel/<int: id>")
+@app.route("/cancel/<int:id>")
 def editEvent(id):
     sql = "UPDATE events SET status = 'Cancelled' WHERE id = %s"
     values = (id,)
     cursor.execute(sql, values)
+    return redirect("/myevents")
 
 @app.route("/update/<int:id>")
-def updateEvent(methods = ["GET", "POST"]):
+def updateEvent(id, methods = ["GET", "POST"]):
+    sql = "SELECT id, host, description, day, time, status FROM events WHERE id = %s"
+    values = (id,)
+    cursor.execute(sql, values)
+    result = cursor.fetchall()
     if request.method == "POST":
-        pass
+        description = request.form.get("description")
+        day = request.form.get("day")
+        time = request.form.get("time")
+        status = request.form.get("status")
+        sql = "UPDATE events SET description = %s, day = %s, time = %s, status = %s WHERE id = %s"
+        values = (description, day, time, status, id)
+        cursor.execute(sql, values)
+        return redirect("/myevents")
     else:
-        pass
+        return render_template("edit.html", user = session["username"], event = result)
 
 if __name__ == '__main__':
     #import os
