@@ -11,10 +11,10 @@ wsgi_app = app.wsgi_app
 app.secret_key = "Key Time!"
 
 db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="greatkid5000",
-    database="sys"
+    host="us-cdbr-east-03.cleardb.com",
+    user="be5e837fddd900",
+    password="522c0eb0",
+    database="heroku_607f7d9541d03f8"
 )
 
 cursor = db.cursor()
