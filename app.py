@@ -122,13 +122,10 @@ def editEvent(id):
     cursor.execute(sql, values)
     return redirect("/myevents")
 
-@app.route("/update/<int:id>")
-def updateEvent(id, methods = ["GET", "POST"]):
-    sql = "SELECT id, host, description, day, time, status FROM events WHERE id = %s"
-    values = (id,)
-    cursor.execute(sql, values)
-    result = cursor.fetchall()
+@app.route("/update/<int:id>", methods = ["GET", "POST"])
+def updateEvent(id):
     if request.method == "POST":
+        username = session["username"]
         description = request.form.get("description")
         day = request.form.get("day")
         time = request.form.get("time")
@@ -138,6 +135,10 @@ def updateEvent(id, methods = ["GET", "POST"]):
         cursor.execute(sql, values)
         return redirect("/myevents")
     else:
+        sql = "SELECT id, host, description, day, time, status FROM events WHERE id = %s"
+        values = (id,)
+        cursor.execute(sql, values)
+        result = cursor.fetchone()
         return render_template("edit.html", user = session["username"], event = result)
 
 if __name__ == '__main__':
