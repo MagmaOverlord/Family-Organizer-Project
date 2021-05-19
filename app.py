@@ -1,14 +1,18 @@
 from flask import Flask, request, redirect, session, render_template
 app = Flask(__name__)
 
-import gunicorn
+from flask_wtf.csrf import CSRFProtect;
 
+import gunicorn
 import mysql.connector
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
 
-app.secret_key = "Key Time!"
+app.secret_key = ":OPIAHg;oiahnvb;oadfhg;'oiaejIjv'"
+
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 db = mysql.connector.connect(
     host="us-cdbr-east-03.cleardb.com",
